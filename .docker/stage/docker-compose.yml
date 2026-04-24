@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+    kvoda_expeditors:
+        restart: always
+        build: ./apache
+        volumes:
+            - ../..:/var/www/html
+            - ./apache/php.ini:/usr/local/etc/php/php.ini
+        environment:
+            DB_DATABASE: kvoda_expeditors
+            DB_USERNAME: local
+            DB_HOST: 192.168.0.37
+            DB_PASSWORD: local
+        networks:
+            - network1
+        ports:
+            - "8182:80"
+        #extra_hosts:
+            #- host.docker.internal:host-gateway
+
+    mqtt:
+        restart: always
+        image: eclipse-mosquitto
+        ports:
+            - "1884:1884"
+            - "9001:9001"
+        volumes:
+            - ./mqtt/config:/mosquitto/config
+            - ./mqtt/data:/mosquitto/data
+            - ./mqtt/log:/mosquitto/log
+        networks:
+            - network1
+    
+networks:
+   network1:
+     external:
+         name: expeditors
