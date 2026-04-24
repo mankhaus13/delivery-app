@@ -1,0 +1,245 @@
+1. авторизация
+
+post formdata /api/auth
+
+phone: 89234391702 (начинаем с 8)
+password: string
+
+response {
+ status: 200
+ data: {
+   trace: {} // не смотрю сюда, только для дебага
+   userId?: number,
+   error?: { // тут под вопросом, жду фидбека от Миши
+     phone: string,
+     password: string
+   },
+   message:  // на всех запросах будет прилетать, если запрос со статусом 200 там что-то про успешное выполнение, иначе про ошибку
+ }
+}
+
+2. признак авторизова я или нет
+
+get /api/check-auth
+
+response {
+  status: 200 // фронт смотрит на статус
+  data: {
+   message: 'authorized'
+   userId?: number,
+  }
+}
+
+3. инфа о рабочем дне 
+
+get /api/work-day?date=DAY.MONTH.YEAR
+
+response {
+ shipping?: [
+   {
+     id: number,
+     terminal: string,
+     window: string,
+     datetime: 'DAY.MONTH.YEAR HH:MM:SS'
+   }
+ ],
+ bodycheck?: {
+   id: number,
+   datetime: 'DAY.MONTH.YEAR HH:MM:SS',
+ },
+ orderStatistic?: { статистика по заявка в разрезе периода // фронт подпихнет нули, чтобы показать что-то
+   delivered: number,
+   current: number,
+   closed: number
+ },
+ brigadeMembers?: [
+   {
+     id: number,
+     name: string, // Коряков О.Е.
+   },
+   {
+     id: number,
+     name: string, // Коряков О.Е.
+   }
+ ],
+ car?: {
+   model: string //  ГАЗ 64
+   number: string // № А853МР • 70 RUS
+ },
+ dayOrderStatistic?: {
+   ordersCount: number,
+   emptyBottles: number,
+   totalAmount: number
+ }
+}
+
+4. список заказов
+
+get /api/orders?date=DAY.MONTH.YEAR
+
+{
+ data: {
+  morning: {
+  list: [ // все кроме "выполнена"
+    id: number;
+    status: enum из ERP;
+    external_id: string;
+    userName: string; // Константин Костантинопольский Александрович,
+    intervalLabel: string; // вт, 30 янв. 10:20 — 11:20,
+    addressLabel: string; // ул. Академика Сахарова, 193,
+    addressAdditionalLabel: string // кв/офис 12, этаж 2, подъезд 1
+    totalAmount: number;
+    emptyBottles: number; // тара на возврат
+    // возможно будет доп поле с оплачено
+    addressComment: string; // комметарий адреса
+    comment: string // комментарий к заказу Миша узнает :)
+    paymentType: enum из ERP;
+    items: [
+      {
+        image?: string;
+        name: string;
+        quantity: number;
+        price: number;
+      }
+    ]     
+  ],
+  closedList: [] // только "выполнена"
+}
+day: {
+  list: [],
+  closedList: []
+}
+evening: {
+  list: [],
+  closedList: []
+}
+ }
+}
+
+5. аквтивный заказ/заявка
+
+get /api/active-order
+
+response {
+ data: {
+  order: {// все кроме "выполнена"
+  id: number;
+  status: enum из ERP;
+  external_id: string;
+  userName: string; // Константин Костантинопольский Александрович,
+  intervalLabel: string; // вт, 30 янв. 10:20 — 11:20,
+  addressLabel: string; // ул. Академика Сахарова, 193,
+  addressAdditionalLabel: string // кв/офис 12, этаж 2, подъезд 1
+  totalAmount: number;
+  emptyBottles: number; // тара на возврат
+  // возможно будет доп поле с оплачено
+  addressComment: string; // комметарий адреса
+  comment: string // комментарий к заказу Миша узнает :)
+  paymentType: enum из ERP;
+  items: [
+    {
+      image?: string;
+      name: string;
+      quantity: number;
+      price: number;
+    }]
+  }
+ }
+}
+
+6. начать развоз
+
+patch formdata /api/order-start
+
+request {
+  id: number // айдишник внутренней системы  
+}
+
+response {
+  status: 200,
+  data: {
+    message: string
+  }
+}
+
+7. запрос отмены
+
+patch formdata /api/order-cancel
+request {
+  id: number // айдишник внутренней системы,
+  reasonId: number // айдишник причины отмены
+}
+
+response {
+  status: 200,
+  data: {
+    message: string
+  }
+}
+
+8. Подтверждение заказа
+patch formdata /api/order-submit
+request {
+  id: number // айдишник внутренней системы,
+  emptyBottles: number // фактическое кол-во тары на возврат
+}
+
+response {
+  status: 200,
+  data: {
+    message: string
+  }
+}
+
+9. список причин отмены заказа
+get /api/cancel-reasons
+response {
+  data: {
+    list: [
+      {
+        id: number;
+        label: string;
+      }
+    ]
+  }
+}
+
+10. список уведомлени
+get /api/notifications
+
+response {
+  data: {
+    readed: [
+      {
+        id: number,
+        message: string // HTML который фронт будет пихать в карточку
+        orderStatus: enum из ERP,
+        datetime: 'DAY.MONTH.YEAR HH:MM:SS', // получения
+      }
+    ],
+    unreaded: []
+  }
+}
+
+11. patch /api/read-notification
+request {
+  id: number
+}
+
+12. get /api/mobile/current-period
+
+response {
+  data: {
+    currentPeriod: 'morning' | 'day' | 'evening'
+  }
+}
+
+
+MQTT
+подключаюсь с clientId равным айди пользователя userId (получаю в запросах его на check-auth и auth)
+
+названия топиков, данные ожидаю такие же, как и в соответсвующих запросах
+WORK_DAY = 'workday/',
+ORDERS = 'orders/',
+CANCEL_REASONS = 'cancel-reasons/',
+NOTIFICATIONS = 'notifications/',

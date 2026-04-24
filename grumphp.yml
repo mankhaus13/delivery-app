@@ -1,0 +1,37 @@
+grumphp:
+    stop_on_failure: false
+    ignore_unstaged_changes: false
+    tasks:
+        phpcs:
+            standard: [PSR12]
+            severity: ~
+            error_severity: ~
+            warning_severity: ~
+            tab_width: ~
+            report: full
+            report_width: ~
+            whitelist_patterns:
+                - /^app\/Http\/Controllers\/API\/.*\.php$/
+                - /^app\/Services\/.*\.php$/
+            encoding: ~
+            ignore_patterns: []
+            sniffs: []
+            triggered_by: [php]
+            exclude: []
+            show_sniffs_error_path: true
+
+        phpmd:
+            whitelist_patterns:
+                - /^app\/Http\/Controllers\/API\/.*\.php$/
+                - /^app\/Services\/.*\.php$/
+            exclude:
+                - /^vendor\/
+            report_format: text
+            ruleset: ["cleancode", "codesize", "controversial", 'design', 'naming', "unusedcode"]
+            triggered_by: ["php"]
+
+#        phan:
+#           config_file: .phan/config.php
+#           output_mode: text
+#           output: null
+#           triggered_by: [php]
